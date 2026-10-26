@@ -1,41 +1,49 @@
 # RSP Gov.Notify Serverless API
-#### The below environment variables should be acquired and set locally for the API to run correctly:
-NOTIFY_API_KEY - Api key taken from Gov.Notify service
-SMS_TEMPLATE_KEY - Template key for SMS message from Gov.Notify Service
-EMAIL_TEMPLATE_KEY - Template key for Email message from Gov.Notify Service
-PAYMENT_PORTAL_URL - URL to be included in notification message.
 
-#### Pre-requisites
-Although Serverless Framework is being used solely for local development purposes, you still need a `[default]` AWS profile in `~/.aws/credentials` in order for for you to run the app locally.
+Orchestrates sending notification messages via Gov.Notify.
 
-#### Description
-This API orchestrates sending notification messages via the Gov.Notify service.
+## Run locally
+Requires Node `^24.15.0` and npm `^11.12.1` (see `engines` in `package.json` and `.nvmrc`).
 
-## Run Locally
-- `nvm use`
-- `npm i`
-- `npm run start`
+```bash
+nvm use
+npm i
+npm start
+```
+Once running, send a `POST` request to one of:
+- `http://localhost:3000/dev/notifyEmail` (body schema: [NotifyEmailRequest](src/models/NotifyEmailRequest.json))
+- `http://localhost:3000/dev/notifySms` (body schema: [NotifySmsRequest](src/models/NotifySmsRequest.json))
 
-## Package for development
-- `npm run build`
+The local server runs with `--noAuth`, so no authentication is required (in Bruno, set Auth to "No Auth").
 
-## Package for production
-- `npm run build:prod`
+## Configuration
+Set in `.env` (loaded by `serverless-dotenv-plugin`):
 
-## To run unit tests
+| Variable | Description                                                                                     |
+|---|-------------------------------------------------------------------------------------------------|
+| `NOTIFY_API_KEY` | Gov.Notify API key                                                                              |
+| `PAYMENT_PORTAL_URL` | URL included in messages                                                                        |
+| `TEMPLATE_KEY_EMAIL_<LANGUAGE>`, `TEMPLATE_KEY_SMS_<LANGUAGE>` | Gov.Notify template IDs, e.g. `TEMPLATE_KEY_EMAIL_ENGLISH` (full list in `src/utils/config.js`) |
+| `USE_SECRETS_MANAGER` | `true` to load config from Secrets Manager instead of env vars                                  |
+| `SECRETS_MANAGER_SECRET_NAME`, `REGION` | Secret name and AWS region (Secrets Manager only)                                               |
+| `AWS_PROFILE` | Optional profile for Secrets Manager when offline; defaults to the `default` profile            |
 
-- `npm run test`
+### Interacting with Secrets Manager locally
+1. Sign in with a named profile:
+   ```bash
+   aws login --profile <name>          
+   aws sts get-caller-identity --profile <name>
+   ```
+2. Check you can read the secret:
+   ```bash
+   aws secretsmanager get-secret-value --secret-id <secret-name> --region <region> --profile <name>
+   ```
+3. In `.env` set `USE_SECRETS_MANAGER=true`, `SECRETS_MANAGER_SECRET_NAME`, `REGION` and `AWS_PROFILE=<name>`, then run `npm start`.
 
-## To Lint
 
-- `npm run lint`
+## Scripts
+- `npm test` / `npm run lint` / `npm run lint:fix`
+- `npm run build` - bundles lambdas to `.webpack/`
+- `npm run build:prod` - zips each lambda in `lambdas.json` into `dist/`
 
-## To auto fix linting errors
-
-- `npm run lint:fix`
-
-## To Note
-
-SAM is a new addition and is being used for building for running locally and for packaging for production - using the `template.yaml` file.
-
-Serverless is being used for running locally from the built files. Ideally SAM will be used for packaging and running locally going forward and the serverless config can be removed.
+Serverless is used only for local running (`serverless-offline`) and OpenAPI generation (`npm run build-openapi`).

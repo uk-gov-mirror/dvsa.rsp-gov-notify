@@ -1,4 +1,3 @@
-import 'babel-polyfill';
 import expect from 'expect';
 import sinon from 'sinon';
 import config from '../../utils/config';

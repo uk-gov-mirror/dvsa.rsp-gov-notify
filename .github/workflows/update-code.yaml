@@ -27,15 +27,15 @@ jobs:
           echo "MATRIX=$(jq -c . < ./lambdas.json)" >> $GITHUB_OUTPUT
 
   update-lambda-code:
-    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v4.0.1
+    uses: dvsa/.github/.github/workflows/update-lambda-function.yaml@v6.2.0
     needs: [ lambdas ]
     strategy:
       matrix:
         lambdaName: ${{ fromJSON(needs.lambdas.outputs.matrix).lambdas }}
     with:
       environment: ${{ github.event.inputs.environment }}
-      lambda_function_name: rsp-nonprod-apis-notify-${{ matrix.lambdaName }}
-      bucket_key: notify/${{ matrix.lambdaName }}/${{ github.event.inputs.zip_archive }}
+      lambda-function-name: rsp-nonprod-apis-notify-${{ matrix.lambdaName }}
+      bucket-key: notify/${{ matrix.lambdaName }}/${{ github.event.inputs.zip_archive }}
     permissions:
       id-token: write
     secrets:

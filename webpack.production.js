@@ -1,6 +1,5 @@
 const fs = require('fs-extra');
 const { merge } = require('webpack-merge');
-const archiver = require('archiver');
 const common = require('./webpack.config');
 const lambdaNames = require('./lambdas.json');
 
@@ -27,12 +26,13 @@ class BundlePlugin {
 		});
 	}
 
-	static createArchive(inputPath, outputPath, outputName, ignore) {
+	static async createArchive(inputPath, outputPath, outputName, ignore) {
+		const { ZipArchive } = await import('archiver');
 		if (!fs.existsSync(outputPath)) {
 			fs.mkdirSync(outputPath);
 		}
 		const output = fs.createWriteStream(`${outputPath}/${outputName}.zip`);
-		const archive = archiver('zip');
+		const archive = new ZipArchive();
 
 		output.on('close', () => {
 			console.log(`${archive.pointer()} total bytes`);
@@ -56,7 +56,7 @@ class BundlePlugin {
 
 function getArchives() {
 	return lambdaNames.lambdas.map((lambdaName) => ({
-		inputPath: `.aws-sam/build/${lambdaName}`,
+		inputPath: `.webpack/${lambdaName}`,
 		outputPath: `${OUTPUT_FOLDER}`,
 		outputName: `${lambdaName}`,
 	}));

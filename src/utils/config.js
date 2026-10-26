@@ -1,4 +1,4 @@
-import { SecretsManager } from 'aws-sdk';
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { logInfo, logError } from './logger';
 
 const configMetadata = {
@@ -56,27 +56,25 @@ const configMetadata = {
 
 let configuration = {};
 async function bootstrap() {
-	return new Promise((resolve, reject) => {
-		if (process.env.USE_SECRETS_MANAGER === 'true') {
-			const SecretId = process.env.SECRETS_MANAGER_SECRET_NAME;
-			logInfo('NotifySecretsManagerSecretId', { secretId: SecretId });
-			const secretsManagerClient = new SecretsManager({ region: process.env.REGION });
-			secretsManagerClient.getSecretValue({ SecretId }, (err, secretsManagerResponse) => {
-				if (err) {
-					logError('NotifySecretsManagerError', err.message);
-					reject(err);
-					return;
-				}
-				configuration = JSON.parse(secretsManagerResponse.SecretString);
-				resolve(configuration);
-			});
-		} else {
-			logInfo('NotifyServiceEnvVars', 'Using envvars for config');
-			configuration = Object.values(configMetadata)
-				.reduce((config, envkey) => ({ [envkey]: process.env[envkey], ...config }), configuration);
-			resolve(configuration);
+	if (process.env.USE_SECRETS_MANAGER === 'true') {
+		const SecretId = process.env.SECRETS_MANAGER_SECRET_NAME;
+		logInfo('NotifySecretsManagerSecretId', { secretId: SecretId });
+		// if running locally use the profile from the .env file, otherwise use the default profile
+		const profile = process.env.IS_OFFLINE ? process.env.AWS_PROFILE : undefined;
+		const secretsManagerClient = new SecretsManagerClient({ region: process.env.REGION, profile });
+		try {
+			const secretsManagerResponse = await secretsManagerClient.send(new GetSecretValueCommand({ SecretId }));
+			configuration = JSON.parse(secretsManagerResponse.SecretString);
+		} catch (err) {
+			logError('NotifySecretsManagerError', err.message);
+			throw err;
 		}
-	});
+		return configuration;
+	}
+	logInfo('NotifyServiceEnvVars', 'Using .env vars for config');
+	configuration = Object.values(configMetadata)
+		.reduce((config, envkey) => ({ [envkey]: process.env[envkey], ...config }), configuration);
+	return configuration;
 }
 
 const fromConfiguration = (configKey) => () => {
