@@ -46,6 +46,7 @@ functions:
             description: "Send Email notification"
             requestBody:
               description: "Email notification request payload"
+              required: true
             requestModels:
               application/json: "NotifyEmailRequest"
             methodResponses:
@@ -78,6 +79,7 @@ functions:
             description: "Send SMS notification"
             requestBody:
               description: "SMS notification request payload"
+              required: true
             requestModels:
               application/json: "NotifySmsRequest"
             methodResponses:

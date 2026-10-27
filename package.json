@@ -10,7 +10,7 @@
     "npm": "^11.12.1"
   },
   "scripts": {
-    "build-openapi": "mkdir -p build && sls openapi generate -f json -o build/openapi.json",
+    "build-openapi": "mkdir -p build && sls openapi generate -f yaml -o build/openapi.yaml",
     "prepush": "npm test && npm run lint && npm run check-security",
     "check-security": "git secrets --scan",
     "check-security-log": "git log -p | scanrepo",
